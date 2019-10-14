@@ -6,6 +6,7 @@ class UnitTest{
 public:
     UnitTest(){};
     void test_vectors();
+    void test_mat();
 };
 
 

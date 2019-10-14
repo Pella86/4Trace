@@ -3,6 +3,7 @@
 #include <iostream>
 
 #include <vec.tpp>
+#include <mat.tpp>
 
 using namespace std;
 
@@ -78,4 +79,28 @@ void UnitTest::test_vectors(){
 
     V3d test_scal_a{1., 2., 4.};
     utv_test("Test scalar multiplication", test_scal_a * 5. == V3d(5., 10., 20.))
+}
+
+
+
+void UnitTest::test_mat(){
+
+    Matrix<double, 3, 4> mat;
+
+    cout << mat << endl;
+
+    //https://www.mathsisfun.com/algebra/matrix-multiplying.html
+    double imat[2][3] = {{6, 4, 24}, {1, -9, 8}};
+    Matrix<double, 2, 3> tprod_A(imat);
+
+    double imat2[3][2] = {{7, 8}, {9, 10}, {11, 12}};
+    Matrix<double, 3, 2> tprod_B(imat2);
+
+    cout << tprod_A << endl;
+    cout << tprod_B << endl;
+
+    cout << tprod_A * tprod_B << endl;
+
+
+
 }

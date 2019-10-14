@@ -11,6 +11,7 @@ int main()
 
     UnitTest ut;
     ut.test_vectors();
+    ut.test_mat();
 
     return 0;
 }

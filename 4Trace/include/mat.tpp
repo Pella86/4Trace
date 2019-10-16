@@ -2,84 +2,173 @@
 #define MAT_T
 
 #include <iostream>
+#include <vector>
+#include <exception>
+#include <string>
 
+#include "vec.tpp"
 
-template<typename T = double, size_t M = 1, size_t N = 1>
-class Matrix{
-    T mat[M][N];
-    const size_t MROW = M;
-    const size_t NCOL = N;
-
-    size_t calc_index(size_t i, size_t j){return i * M + j;}
-
+class MatrixError : public std::exception {
+private:
+    std::string message;
 public:
 
-    const size_t rows() const {return MROW;}
-    const size_t cols() const {return NCOL;}
+    MatrixError(std::string msg) : message(msg) {};
 
-    Matrix(){
-        for(size_t i = 0; i < M; i++){
-            for(size_t j = 0; j < N; j++){
-                mat[i][j] = T(0);
+    virtual const char* what() const throw() {
+        return message.c_str();
+    }
+
+};
+
+template<typename T>
+class Matrix{
+private:
+    std::vector<T> mat;
+
+    size_t MROW;
+    size_t NCOL;
+
+    inline size_t calc_index(size_t i, size_t j) const {
+        return i * NCOL + j;
+    }
+
+
+public:
+    size_t rows() const {return MROW;}
+    size_t cols() const {return NCOL;}
+
+    Matrix(size_t m, size_t n) : MROW(m), NCOL(n) {
+        // initialize the matrix
+        for(size_t i = 0; i < MROW; i++){
+            for(size_t j = 0; j < NCOL; j++){
+                mat.push_back(T(0));
             }
         }
     }
 
-    Matrix(T imat[M][N]){
-        for(size_t i = 0; i < M; i++){
-            for(size_t j = 0; j < N; j++){
-                mat[i][j] = imat[i][j];
+    Matrix(std::initializer_list<std::initializer_list<T>> lst) :
+        MROW(lst.size()),
+        NCOL(lst.size()? lst.begin()->size(): 0) {
+        // initialize the matrix
+
+        for(const auto& l : lst){
+            for(const auto& v : l){
+                mat.push_back(v);
             }
         }
     }
 
-    const T* operator[](size_t i) const {return mat[i];}
-
-    T* operator[](size_t i) {return mat[i];}
-
-    template<typename MatrixType>
-    Matrix<T, M, N>& operator*=(const MatrixType rhs_mat){
-        if(NCOL == rhs_mat.MROW){throw "Matrix mult impossible M != N";}
-
-        (*this) = (*this) * rhs_mat;
-
-        return this;
+    template<size_t dim>
+    Matrix(Vector<T, dim> const& v) :
+        MROW(1),
+        NCOL(v.dimension())
+    {
+        for(size_t i = 0; i < MROW; i++){
+            for(size_t j = 0; j < NCOL; j++){
+                mat.push_back(v[j]);
+            }
+        }
     }
 
-    template<typename MatrixType>
-    friend Matrix<T, M, N> operator*(Matrix<T, M, N> A, MatrixType const& B){
-        if(A.cols() != B.rows()){throw "Matrix mult impossible (N col != M row)";}
+    void set(size_t i, size_t j, T x){
+        mat[calc_index(i, j)] = x;
+    }
 
-        Matrix<T, A.rows(), B.cols()> res_mat;
+    T get(size_t i, size_t j) const {
+        return mat[calc_index(i, j)];
+    }
 
-        for(size_t i = 0; i < A.MROW; i++){
-            for(size_t j = 0; j < B.NCOL; j++){
-                T sum = 0;
-                for(size_t jj = 0; jj < B.NCOL; jj++){
-                        sum += A[i][jj] * B[jj][j];
+    friend Matrix operator*(Matrix const& A, Matrix const& B){
+
+        if(A.cols() != B.rows()){throw MatrixError("Matrix multiplication impossible A.M != B.N");}
+
+        Matrix res(A.rows(), B.cols());
+
+        for(size_t i = 0; i < A.rows(); i++){
+            for(size_t j = 0; j < B.cols(); j++){
+                T sum = T(0);
+                for(size_t mult_idx = 0; mult_idx < A.cols(); mult_idx++){
+                    sum += (A.get(i, mult_idx) * B.get(mult_idx, j));
                 }
-
-                res_mat[i][j] = sum;
+                res.set(i, j, sum);
             }
         }
-        return res_mat;
+        return res;
     }
-    friend std::ostream& operator<<(std::ostream& os, Matrix<T, M, N> m){
 
-        for(size_t i = 0; i < M; i++){
-            for(size_t j = 0; j < N - 1; j++){
-                std::cout << m[i][j] << " ";
+    bool operator==(const Matrix& imat){
+        return mat == imat.mat;
+    }
+
+    Matrix transpose(){
+        Matrix tr(NCOL, MROW);
+
+        for(size_t i = 0; i < MROW; i++){
+            for(size_t j = 0; j < NCOL; j++){
+                tr.set(j, i, get(i, j));
             }
-            std::cout << m[i][N - 1] << std::endl;
         }
-        std::cout << std::endl;
+
+        return tr;
+    }
+
+    friend std::ostream& operator<<(std::ostream& os, const Matrix<T>& mat){
+        for(size_t i = 0; i < mat.rows(); i++){
+            for(size_t j = 0; j < mat.cols() - 1; j++){
+                os << mat.get(i, j) << " ";
+            }
+            os << mat.get(i, mat.cols() - 1);
+            os << std::endl;
+        }
 
         return os;
     }
+};
+
+template<typename T>
+class SquaredMatrix : public Matrix<T> {
+
+public:
+    SquaredMatrix(size_t m) : Matrix<T>(m, m){};
+
+    SquaredMatrix(std::initializer_list<std::initializer_list<T>> lst) : Matrix<T>(lst) {
+        if(this->rows() != this->cols()){throw MatrixError("Not a square matrix.");}
+    }
+
+    void form_identity(){
+        for(size_t i = 0; i < this->rows(); i++){
+            for(size_t j = 0; j < this->cols(); j++){
+                if(i == j) {this->set(i, j, T(1));}
+                else {this->set(i, j, T(0));}
+            }
+        }
+    }
+};
 
 
-
+template<typename T>
+class Matrix44 : public SquaredMatrix<T> {
+public:
+    Matrix44() : SquaredMatrix<T>(4) {};
+    Matrix44(std::initializer_list<std::initializer_list<T>> lst) : SquaredMatrix<T>(lst) {};
 
 };
+
+template<typename T>
+V3<T> operator*(V3<T> const& vec, Matrix44<T> const& mat){
+    // transform vector in row major matrix
+    Matrix<T> fromv(1, 4);
+    for(size_t i = 0; i < 3; i++){
+        fromv.set(0, i, vec[i]);
+    }
+    fromv.set(0, 3, T(1));
+
+    // calculate the multiplication
+    Matrix<T> res = fromv * mat;
+
+    // return the vector
+    return V3<T>(res.get(0, 0), res.get(0, 1), res.get(0, 2));
+}
 
 #endif // MAT_T

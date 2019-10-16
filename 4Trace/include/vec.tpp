@@ -23,6 +23,8 @@ public:
         }
     }
 
+    const size_t dimension() const {return dim;}
+
     T operator[](size_t index) const {
         return coords[index];
     }
@@ -150,9 +152,6 @@ public:
         return os;
     }
 };
-
-
-
 
 
 template<typename T>

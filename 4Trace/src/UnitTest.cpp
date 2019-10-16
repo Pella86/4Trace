@@ -7,6 +7,7 @@
 
 using namespace std;
 
+
 #define utv_test(title, cond) do{ \
     cout << "--- " << title << " ---" << endl; \
     cout << "Test: " << #cond << endl; \
@@ -85,21 +86,48 @@ void UnitTest::test_vectors(){
 
 void UnitTest::test_mat(){
 
-    Matrix<double, 3, 4> mat;
+    Matrix<double> mat(3,4);
 
     cout << mat << endl;
 
     //https://www.mathsisfun.com/algebra/matrix-multiplying.html
-    double imat[2][3] = {{6, 4, 24}, {1, -9, 8}};
-    Matrix<double, 2, 3> tprod_A(imat);
+    Matrix<double> tprod_A({{1, 2, 3}, {4, 5, 6}});
 
-    double imat2[3][2] = {{7, 8}, {9, 10}, {11, 12}};
-    Matrix<double, 3, 2> tprod_B(imat2);
+    Matrix<double> tprod_B({{7, 8}, {9, 10}, {11, 12}});
 
+    cout << "Matrix A" << endl;
     cout << tprod_A << endl;
+
+    cout << "Matrix B" << endl;
     cout << tprod_B << endl;
 
-    cout << tprod_A * tprod_B << endl;
+    Matrix<double> tprod_exp({{58, 64},{139, 154}});
+    Matrix<double> tprod_res = tprod_A * tprod_B;
+
+    cout << "A * B" << endl;
+    cout << tprod_res << endl;
+
+    utv_test("Test matrix product", tprod_exp == tprod_res);
+
+    Matrix<int> trtest({{1, 2}, {3, 4}, {5, 6}});
+    Matrix<int> trtestexp({{1, 3, 5}, {2, 4, 6}});
+    Matrix<int> transposed = trtest.transpose();
+
+    cout << trtest << endl;
+    cout << transposed << endl;
+    cout << trtestexp << endl;
+
+    utv_test("Test matrix transposition", transposed == trtestexp);
+
+
+    V3d vec(1, 2, 3);
+    Matrix44<double> transmat({{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {2, 2, 2, 1}});
+
+    V3d res = vec * transmat * transmat;
+
+    utv_test("Test vector matrix multiplication", res == V3d(5., 6., 7.));
+
+
 
 
 

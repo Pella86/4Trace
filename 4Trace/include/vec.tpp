@@ -1,8 +1,6 @@
 #ifndef VEC_T
 #define VEC_T
 
-# define M_PI           3.14159265358979323846
-
 #include <iostream>
 #include <cstdint>
 #include <vector>
@@ -13,6 +11,9 @@
 #include <utils.h>
 
 
+constexpr double M_PI = 3.14159265358979323846;
+
+
 template<typename T, size_t dim>
 class Vector{
     T coords[dim];
@@ -20,6 +21,12 @@ public:
     Vector() {
         for(size_t i = 0; i < dim; i++){
             coords[i] = T(0);
+        }
+    }
+
+    Vector(T init){
+        for(size_t i = 0; i < dim; i++){
+            coords[i] = T(init);
         }
     }
 

@@ -7,6 +7,7 @@ public:
     UnitTest(){};
     void test_vectors();
     void test_mat();
+    void test_bmp();
 };
 
 

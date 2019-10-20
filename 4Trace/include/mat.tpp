@@ -38,6 +38,8 @@ public:
     size_t rows() const {return MROW;}
     size_t cols() const {return NCOL;}
 
+    Matrix() : MROW(0), NCOL(0){}
+
     Matrix(size_t m, size_t n) : MROW(m), NCOL(n) {
         // initialize the matrix
         for(size_t i = 0; i < MROW; i++){

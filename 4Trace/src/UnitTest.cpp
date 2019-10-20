@@ -1,9 +1,12 @@
 #include "UnitTest.h"
 
 #include <iostream>
+#include <fstream>
+#include <iomanip>
 
 #include <vec.tpp>
 #include <mat.tpp>
+#include <bmp.h>
 
 using namespace std;
 
@@ -90,35 +93,23 @@ void UnitTest::test_mat(){
 
     cout << mat << endl;
 
+
     //https://www.mathsisfun.com/algebra/matrix-multiplying.html
     Matrix<double> tprod_A({{1, 2, 3}, {4, 5, 6}});
 
     Matrix<double> tprod_B({{7, 8}, {9, 10}, {11, 12}});
 
-    cout << "Matrix A" << endl;
-    cout << tprod_A << endl;
-
-    cout << "Matrix B" << endl;
-    cout << tprod_B << endl;
-
     Matrix<double> tprod_exp({{58, 64},{139, 154}});
     Matrix<double> tprod_res = tprod_A * tprod_B;
 
-    cout << "A * B" << endl;
-    cout << tprod_res << endl;
-
     utv_test("Test matrix product", tprod_exp == tprod_res);
+
 
     Matrix<int> trtest({{1, 2}, {3, 4}, {5, 6}});
     Matrix<int> trtestexp({{1, 3, 5}, {2, 4, 6}});
     Matrix<int> transposed = trtest.transpose();
 
-    cout << trtest << endl;
-    cout << transposed << endl;
-    cout << trtestexp << endl;
-
     utv_test("Test matrix transposition", transposed == trtestexp);
-
 
     V3d vec(1, 2, 3);
     Matrix44<double> transmat({{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {2, 2, 2, 1}});
@@ -126,9 +117,43 @@ void UnitTest::test_mat(){
     V3d res = vec * transmat * transmat;
 
     utv_test("Test vector matrix multiplication", res == V3d(5., 6., 7.));
+}
 
 
 
+void UnitTest::test_bmp(){
 
+    constexpr size_t size_file_header = 14;
+    constexpr size_t size_info_header = 40;
 
+    string image_filename = "C:\\Users\\Mauro\\Desktop\\Vita Online\\Programming\\4trace\\4Trace\\test_bmp_images\\test_24bit_9x5.bmp";
+    ifstream bmpfile (image_filename, ios::binary);
+
+    // test headers
+    if(bmpfile.is_open()){
+
+        cout << "File is open" << endl;
+
+        // red file header
+        char b_file_header[size_file_header];
+        bmpfile.read(b_file_header, size_file_header);
+
+        bmp::FileHeader fh(b_file_header);
+
+        cout << fh << endl;
+
+        // read DIB header
+        char b_info_header[size_info_header];
+        bmpfile.read(b_info_header, size_info_header);
+
+        bmp::InfoHeader ih(b_info_header);
+
+        cout << ih << endl;
+    }
+
+    // test Image class
+    bmp::Image im(image_filename);
+
+    string image_copy_filename = "C:\\Users\\Mauro\\Desktop\\Vita Online\\Programming\\4trace\\4Trace\\test_bmp_images\\test_24bit_9x5_copy.bmp";
+    im.write(image_copy_filename);
 }

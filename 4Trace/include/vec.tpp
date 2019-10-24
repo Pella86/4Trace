@@ -91,6 +91,15 @@ public:
         return lhs;
     }
 
+    Vector<T, dim> operator-(){
+        Vector<T, dim> v;
+        for(size_t i = 0; i < dim; i++){
+            v.coords[i] = -coords[i];
+        }
+
+        return v;
+    }
+
     Vector<T, dim>& operator*=(T scalar){
         for(size_t i = 0; i < dim; i++){
             coords[i] = coords[i] * scalar;
@@ -100,6 +109,18 @@ public:
 
     friend Vector<T, dim> operator*(Vector<T, dim> lhs, T scalar){
         lhs *= scalar;
+        return lhs;
+    }
+
+    Vector<T, dim>& operator*=(Vector<T, dim> rhs){
+        for(size_t i = 0; i < dim; i++){
+            coords[i] = coords[i] * rhs.coords[i];
+        }
+        return *this;
+    }
+
+    friend Vector<T, dim> operator*(Vector<T, dim> lhs, const Vector<T, dim>& rhs){
+        lhs *= rhs;
         return lhs;
     }
 

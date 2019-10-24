@@ -82,7 +82,13 @@ void UnitTest::test_vectors(){
     utv_test("Test subtraction", subtest_res == subtest_exp);
 
     V3d test_scal_a{1., 2., 4.};
-    utv_test("Test scalar multiplication", test_scal_a * 5. == V3d(5., 10., 20.))
+    utv_test("Test scalar multiplication", test_scal_a * 5. == V3d(5., 10., 20.));
+
+    utv_test("Test vector x vector mult", test_scal_a * test_scal_a == V3d(1., 4, 16));
+
+    V3d test_unary_minus(1.5, 2, 3);
+
+    utv_test("Test unary minus", -test_unary_minus == V3d(-1.5, -2, -3));
 }
 
 

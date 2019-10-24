@@ -1,16 +1,63 @@
 #include <iostream>
 #include <cmath>
 
+#include <string>
+#include <sstream>
 
-//#include <UnitTest.h>
+#include <UnitTest.h>
+
+#include "3D_render.h"
 
 #include "vec.tpp"
 #include "bmp.h"
 
 using namespace std;
 
-class Sphere{
+using Color = V3d;
 
+constexpr double MAX_RAY_DEPTH = 5;
+
+
+template<size_t dim>
+struct Sphere{
+
+    Vector<double, dim> center;
+    double radius, radius2;
+    Color surface, emission;
+    double transparency, reflection;
+
+    Sphere(const Vector<double, dim>& center,
+          double radius,
+          const Color& surface,
+          const Color& emission,
+          double transparency,
+          double reflection ):
+              center(center),
+              radius(radius),
+              radius2(radius * radius),
+              surface(surface),
+              emission(emission),
+              transparency(transparency),
+              reflection(reflection)
+              {}
+
+
+    bool intersect(const Vector<double, dim>& rayorig, const Vector<double, dim>& raydir, double& t0, double& t1) const{
+        Vector<double, dim> l = center - rayorig;
+        double tca = l.dot(raydir);
+        if(tca < 0) {return false;}
+        else{
+
+            double d2 = l.dot(l) - tca * tca;
+            if(d2 > radius2) {return false;}
+            else{
+                double thc = sqrt(radius2 - d2);
+                t0 = tca - thc;
+                t1 = tca + thc;
+                return true;
+            }
+        }
+    }
 };
 
 
@@ -19,17 +66,86 @@ double radians(double deg){
 }
 
 
-using Color = V3d;
 
 
-Color trace(const V3d& rayorig, const V3d& raydir, const vector<Sphere>& spheres, const int& depth) {
+template<size_t dim>
+Color trace(const Vector<double, dim>& rayorig, const Vector<double, dim>& raydir, const vector<Sphere<dim>>& spheres, const int& depth) {
 
+    double tnear = INFINITY;
+    const Sphere<dim>* sphere = NULL;
 
-    return Color(0);
+    for(size_t i = 0; i < spheres.size(); i++ ){
+        double t0 = INFINITY, t1 = INFINITY;
+        if(spheres[i].intersect(rayorig, raydir, t0, t1)){
+            if(t0 < 0) t0 = t1;
+            if(t0 < tnear){
+                tnear = t0;
+                sphere = &spheres[i];
+                //cout << "Closest sphere found: " << sphere->surface << endl;
+            }
+        }
+    }
+
+    if(!sphere) {
+        //cout << "No match" << endl;
+        return Color(0, 0.2, 0.2);
+    }
+    else{
+        Color surfaceColor(0);
+        Vector<double, dim> phit = rayorig + raydir * tnear;
+        Vector<double, dim> nhit = phit - sphere->center;
+        nhit.normalize();
+        double bias = 1e-4;
+
+        //bool inside = false;
+        if(raydir.dot(nhit) > 0){
+            nhit = -nhit;
+            //inside = true;
+        }
+
+        if((sphere->transparency > 0 || sphere->reflection > 0) && depth < MAX_RAY_DEPTH){
+
+        }
+        else{
+            //cout << "Diffuse object" << endl;
+            //cout << "surface color:" << sphere->surface << endl;
+
+            for(size_t i = 0; i < spheres.size(); i++){
+                if( !(spheres[i].emission == Color(0))){
+
+                    Color transmission(1);
+                    Vector<double, dim> light_direction = spheres[i].center - phit;
+                    light_direction.normalize();
+
+                    for(size_t j = 0; j < spheres.size(); j++){
+
+                        if(i != j){
+                            double t0, t1;
+
+                            if(spheres[j].intersect( (phit + nhit * bias), light_direction, t0, t1) ){
+                                transmission = Color(0);
+                                break;
+                            }
+                        }
+
+                    }
+
+                    //cout << sphere->surface << transmission << max(double(0), nhit.dot(light_direction)) << spheres[i].emission << endl;
+
+                    surfaceColor += sphere->surface * transmission * max(double(0), nhit.dot(light_direction)) * spheres[i].emission;
+                }
+
+            }
+        }
+        return surfaceColor + sphere->emission;
+    }
+
 };
 
-void render(vector<Sphere> spheres){
-    unsigned width = 16, height = 12;
+template<size_t dim>
+void render(vector<Sphere<dim>> spheres, string filename){
+    unsigned width = 640, height = 480;
+    //unsigned width = 16, height = 12;
     double invWidth = 1 / double(width), invHeight = 1 / double(height);
 
     double fov = 30.;
@@ -50,42 +166,71 @@ void render(vector<Sphere> spheres){
             double half_camera_px_y = 2 * half_image_px_y - 1;
             double adjusted_camera_px_y = half_camera_px_y * angle;
 
-            V3d raydir(adjusted_camera_px_x, adjusted_camera_px_y, -1);
+            Vector<double, dim> raydir;
+            raydir[0] = adjusted_camera_px_x;
+            raydir[1] = adjusted_camera_px_y;
+            raydir[2] = -1;
+
             raydir.normalize();
 
-            Color pixel = trace(V3d(0), raydir, spheres, 0);
+            Color pixel = trace(Vector<double, dim>(0), raydir, spheres, 0);
+            pixel.x(min(1., pixel.x()));
+            pixel.y(min(1., pixel.y()));
+            pixel.z(min(1., pixel.z()));
+
+            //cout << pixel << " ";
 
             bmp::Color bmppix(pixel * 255);
 
-            img.pixelArray.set(i, j, bmppix);
+            img.pixelArray.set(i, height-j, bmppix);
         }
+
+        //cout << endl;
 
     }
 
 
 
-    img.write("test_render.bmp");
-
-
-
-
-
+    img.write(filename);
 
 }
+
+template <typename T>
+  std::string numtostr ( T Number )
+  {
+     std::ostringstream ss;
+     ss << Number;
+     return ss.str();
+  }
 
 
 
 
 int main()
 {
+    cout << "START RENDER" << endl;
     // renderer
 
-    vector<Sphere> s;
+    for(int i = -5; i < 5; i++){
 
-    render(s);
+        cout << "rendering image " << i << " ..."<< endl;
+        vector<Sphere<4>> spheres;
+
+        spheres.push_back(Sphere<4>(V4d(0, -10004, -20, 0),  10000, Color(0, 1, 0), Color(0), 0, 0));
+        spheres.push_back(Sphere<4>(V4d(0,      0, -20, 0),      4, Color(1, 0, 0), Color(0), 0, 0));
+        spheres.push_back(Sphere<4>(V4d(5,     -1, -15, 0),      2, Color(0, 0, 1), Color(0), 0, 0));
+        spheres.push_back(Sphere<4>(V4d(0,     20, -30, 0 + i*2),      3, Color(0),       Color(3), 0, 0));
+
+
+        render<4>(spheres, string("ani_test") + numtostr(i + 5) + string(".bmp") );
+
+    }
+
+
 
 
     cout << "Hello world!" << endl;
+
 
 //    UnitTest ut;
 //    ut.test_vectors();

@@ -1,5 +1,4 @@
-bin/Debug/*
 4Trace/4Trace.depend
 ani_test*
 test_render*
-obj/*
+4trace/obj/*

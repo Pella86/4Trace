@@ -197,7 +197,7 @@ void Image::write(string filename){
     // write info header
     info_header.write(s_ptr + size_file_header);
 
-    // write pixel array
+    // move pixel to the start of the pixelArray position
     s_ptr += size_headers;
 
     // pad so that is multiple of ints

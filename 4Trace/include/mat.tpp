@@ -21,6 +21,11 @@ public:
 
 };
 
+/*******************************************************************************
+Matrix class
+  MxN general matrix
+*******************************************************************************/
+
 template<typename T>
 class Matrix{
 private:
@@ -38,6 +43,7 @@ public:
     size_t rows() const {return MROW;}
     size_t cols() const {return NCOL;}
 
+    // ----------------------------- c'tors -----------------------------------
     Matrix() : MROW(0), NCOL(0){}
 
     Matrix(size_t m, size_t n) : MROW(m), NCOL(n) {
@@ -61,6 +67,7 @@ public:
         }
     }
 
+    // matrix form vector c'tor
     template<size_t dim>
     Matrix(Vector<T, dim> const& v) :
         MROW(1),
@@ -73,6 +80,8 @@ public:
         }
     }
 
+    // ----------------------------- set/getters -------------------------------
+
     void set(size_t i, size_t j, T x){
         mat[calc_index(i, j)] = x;
     }
@@ -80,6 +89,8 @@ public:
     T get(size_t i, size_t j) const {
         return mat[calc_index(i, j)];
     }
+
+    // ------------------------------ operators --------------------------------
 
     friend Matrix operator*(Matrix const& A, Matrix const& B){
 
@@ -103,6 +114,7 @@ public:
         return mat == imat.mat;
     }
 
+    // ------------------------------ methods --------------------------------
     Matrix transpose(){
         Matrix tr(NCOL, MROW);
 
@@ -128,6 +140,10 @@ public:
     }
 };
 
+/*******************************************************************************
+ Square matrix class
+*******************************************************************************/
+
 template<typename T>
 class SquaredMatrix : public Matrix<T> {
 
@@ -148,6 +164,10 @@ public:
     }
 };
 
+/*******************************************************************************
+ 4x4 matrix class
+*******************************************************************************/
+
 
 template<typename T>
 class Matrix44 : public SquaredMatrix<T> {
@@ -156,6 +176,11 @@ public:
     Matrix44(std::initializer_list<std::initializer_list<T>> lst) : SquaredMatrix<T>(lst) {};
 
 };
+
+
+/*******************************************************************************
+ Matrix vector multiplication
+*******************************************************************************/
 
 template<typename T>
 V3<T> operator*(V3<T> const& vec, Matrix44<T> const& mat){

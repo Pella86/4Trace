@@ -11,13 +11,17 @@
 #include <utils.h>
 
 
-constexpr double M_PI = 3.14159265358979323846;
 
+/*******************************************************************************
+ Class vector
+*******************************************************************************/
 
 template<typename T, size_t dim>
 class Vector{
     T coords[dim];
 public:
+
+    // ----------------------------- c'tors -----------------------------------
     Vector() {
         for(size_t i = 0; i < dim; i++){
             coords[i] = T(0);
@@ -30,8 +34,9 @@ public:
         }
     }
 
-    const size_t dimension() const {return dim;}
+    // ----------------------------- operators ---------------------------------
 
+    // access operators
     T operator[](size_t index) const {
         return coords[index];
     }
@@ -40,6 +45,7 @@ public:
         return coords[index];
     }
 
+    // assignment operators
     T&  operator=(const T& other){
         if(this != other){
             for(size_t i = 0; i < dim; i++){
@@ -49,6 +55,7 @@ public:
         return *this;
     }
 
+    // == operators
     bool operator==(const Vector<T, dim>& rhs) const {
         for(size_t i = 0; i < dim; i++){
             if(coords[i] != rhs[i]){
@@ -67,6 +74,7 @@ public:
         return true;
     }
 
+    // plus operators
     Vector<T, dim>& operator+=(const Vector<T, dim>& rhs){
         for(size_t i = 0; i < dim; i++){
             coords[i] += rhs[i];
@@ -79,6 +87,7 @@ public:
         return lhs;
     }
 
+    // minus operators
     Vector<T, dim>& operator-=(const Vector<T, dim>& rhs){
         for(size_t i = 0; i < dim; i++){
             coords[i] -= rhs[i];
@@ -100,6 +109,7 @@ public:
         return v;
     }
 
+    // multiplication operators
     Vector<T, dim>& operator*=(T scalar){
         for(size_t i = 0; i < dim; i++){
             coords[i] = coords[i] * scalar;
@@ -112,6 +122,7 @@ public:
         return lhs;
     }
 
+    // vector element wise multiplication
     Vector<T, dim>& operator*=(Vector<T, dim> rhs){
         for(size_t i = 0; i < dim; i++){
             coords[i] = coords[i] * rhs.coords[i];
@@ -131,6 +142,10 @@ public:
         }
         return l;
     }
+
+    // ----------------------------- Methods ---------------------------------
+
+    inline const size_t dimension() const {return dim;}
 
     double length() const {return sqrt(length_squared());}
 
@@ -181,6 +196,9 @@ public:
     }
 };
 
+/*******************************************************************************
+2D vector
+*******************************************************************************/
 
 template<typename T>
 class V2 : public Vector<T, 2> {
@@ -204,6 +222,10 @@ public:
 
 using V2d = V2<double> ;
 
+
+/*******************************************************************************
+3D vector
+*******************************************************************************/
 
 template<typename T>
 class V3 : public Vector<T, 3> {
@@ -239,10 +261,12 @@ public:
 
 using V3d = V3<double>;
 
-#define vDIM 4
+/*******************************************************************************
+4D vector
+*******************************************************************************/
 
 template<typename T>
-class V4 : public Vector<T, vDIM> {
+class V4 : public Vector<T, 4> {
 public:
     V4(T x, T y, T z, T w) {
         (*this)[0] = x;

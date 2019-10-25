@@ -7,6 +7,10 @@
 #include "mat.tpp"
 #include "vec.tpp"
 
+/*******************************************************************************
+Bitmap namespace
+    saves and reads windows 24bit-bitmap files
+*******************************************************************************/
 
 namespace bmp{
 
@@ -43,9 +47,8 @@ namespace bmp{
     };
 
 
-    class Color : V3<uint8_t>{
-    public:
-
+    // 8 bit color
+    struct Color : V3<uint8_t>{
         Color(uint8_t c) : V3(c) {}
         Color(uint8_t r, uint8_t g, uint8_t b) : V3(r, g, b) {}
 

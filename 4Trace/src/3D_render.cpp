@@ -87,10 +87,10 @@ namespace ren3d{
             nhit.normalize();
             double bias = 1e-4;
 
-            bool inside = false;
+            //bool inside = false;
             if(raydir.dot(nhit) > 0){
                 nhit = -nhit;
-                inside = true;
+                //inside = true;
             }
 
             if((sphere->transparency > 0 || sphere->reflection > 0) && depth < MAX_RAY_DEPTH){

@@ -132,7 +132,8 @@ void UnitTest::test_bmp(){
     constexpr size_t size_file_header = 14;
     constexpr size_t size_info_header = 40;
 
-    string image_filename = "C:\\Users\\Mauro\\Desktop\\Vita Online\\Programming\\4trace\\4Trace\\test_bmp_images\\test_24bit_9x5.bmp";
+    string image_filename = ".\\test_bmp_images\\test_24bit_9x5.bmp";
+
     ifstream bmpfile (image_filename, ios::binary);
 
     // test headers
@@ -160,6 +161,6 @@ void UnitTest::test_bmp(){
     // test Image class
     bmp::Image im(image_filename);
 
-    string image_copy_filename = "C:\\Users\\Mauro\\Desktop\\Vita Online\\Programming\\4trace\\4Trace\\test_bmp_images\\test_24bit_9x5_copy.bmp";
+    string image_copy_filename = ".\\test_bmp_images\\test_24bit_9x5_copy.bmp";
     im.write(image_copy_filename);
 }

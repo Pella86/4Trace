@@ -34,12 +34,14 @@
 			<Add option="-Wall" />
 			<Add option="-fexceptions" />
 		</Compiler>
+		<Unit filename="include/3D_render.h" />
 		<Unit filename="include/UnitTest.h" />
 		<Unit filename="include/bmp.h" />
 		<Unit filename="include/mat.tpp" />
 		<Unit filename="include/utils.h" />
 		<Unit filename="include/vec.tpp" />
 		<Unit filename="main.cpp" />
+		<Unit filename="src/3D_render.cpp" />
 		<Unit filename="src/UnitTest.cpp" />
 		<Unit filename="src/bmp.cpp" />
 		<Unit filename="src/utils.cpp" />

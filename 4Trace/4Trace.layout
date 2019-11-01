@@ -2,9 +2,14 @@
 <CodeBlocks_layout_file>
 	<FileVersion major="1" minor="0" />
 	<ActiveTarget name="Debug" />
+	<File name="include\mat.tpp" open="1" top="0" tabpos="7" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="2099" topLine="171" />
+		</Cursor>
+	</File>
 	<File name="include\utils.h" open="1" top="0" tabpos="10" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="53" topLine="0" />
+			<Cursor1 position="343" topLine="0" />
 		</Cursor>
 	</File>
 	<File name="include\UnitTest.h" open="1" top="0" tabpos="2" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
@@ -12,24 +17,29 @@
 			<Cursor1 position="157" topLine="0" />
 		</Cursor>
 	</File>
+	<File name="include\bmp.h" open="1" top="0" tabpos="4" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="1972" topLine="54" />
+		</Cursor>
+	</File>
+	<File name="src\3D_render.cpp" open="1" top="0" tabpos="9" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="2528" topLine="69" />
+		</Cursor>
+	</File>
 	<File name="include\vec.tpp" open="1" top="0" tabpos="6" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
 			<Cursor1 position="178" topLine="0" />
 		</Cursor>
 	</File>
-	<File name="include\mat.tpp" open="1" top="0" tabpos="7" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="380" topLine="21" />
-		</Cursor>
-	</File>
 	<File name="src\UnitTest.cpp" open="1" top="0" tabpos="3" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="4483" topLine="139" />
+			<Cursor1 position="4483" topLine="136" />
 		</Cursor>
 	</File>
 	<File name="main.cpp" open="1" top="1" tabpos="1" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="7218" topLine="218" />
+			<Cursor1 position="9136" topLine="301" />
 		</Cursor>
 	</File>
 	<File name="src\bmp.cpp" open="1" top="0" tabpos="5" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
@@ -40,16 +50,6 @@
 	<File name="include\3D_render.h" open="1" top="0" tabpos="8" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
 			<Cursor1 position="143" topLine="0" />
-		</Cursor>
-	</File>
-	<File name="src\3D_render.cpp" open="1" top="0" tabpos="9" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="2528" topLine="69" />
-		</Cursor>
-	</File>
-	<File name="include\bmp.h" open="1" top="0" tabpos="4" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="117" topLine="0" />
 		</Cursor>
 	</File>
 </CodeBlocks_layout_file>

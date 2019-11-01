@@ -75,6 +75,9 @@ namespace bmp{
         // c'tors
         Image(int width, int height);
         Image(std::string filename);
+        Image(){}
+        int width() const;
+        int height() const;
 
         // save image to file
         void write(std::string filename);

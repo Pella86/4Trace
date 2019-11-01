@@ -214,13 +214,14 @@ public:
         }
     }
 
-    T x(){ return (*this)[0];}
+    T& x(){ return (*this)[0];}
     void x(T ix){ (*this)[0] = ix;}
-    T y(){ return (*this)[1];}
+    T& y(){ return (*this)[1];}
     void y(T iy){ (*this)[1] = iy;}
 };
 
 using V2d = V2<double> ;
+using V2i = V2<int>;
 
 
 /*******************************************************************************

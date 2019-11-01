@@ -1,5 +1,6 @@
 #include <iostream>
 #include <cmath>
+#include <map>
 
 #include <UnitTest.h>
 
@@ -148,7 +149,7 @@ render function
 *******************************************************************************/
 
 template<size_t dim>
-void render(vector<Sphere<dim>> spheres, string filename){
+bmp::Image render(vector<Sphere<dim>> spheres){
     unsigned width = 640, height = 480;
 
     double invWidth = 1 / double(width), invHeight = 1 / double(height);
@@ -189,12 +190,12 @@ void render(vector<Sphere<dim>> spheres, string filename){
             // convert the color to bmp color (8 bit per color)
             bmp::Color bmppix(pixel * 255);
 
-            img.pixelArray.set(i, height-j, bmppix);
+            img.pixelArray.set(i, height- 1 - j, bmppix);
         }
 
     }
 
-    img.write(filename);
+    return img;
 }
 
 
@@ -214,7 +215,8 @@ void example_animation(){
         spheres.push_back(Sphere<4>(V4d(0,     20, -30, 0 + i*2),      3, Color(0),       Color(3), 0, 0));
 
 
-        render<4>(spheres, string("ani_test") + numtostr(i + 5) + string(".bmp") );
+        bmp::Image img = render<4>(spheres);
+        img.write(string("ani_test") + numtostr(i + 5) + string(".bmp") );
 
     }
 
@@ -238,27 +240,172 @@ void draw_axis(){
     }
 
 
-    render<4>(spheres, "test_render_draw_axis.bmp" );
-
-
-
-
+    bmp::Image img = render<4>(spheres);
+    img.write("test_render_draw_axis.bmp");
 
 }
 
+class Glyphs{
+private:
+
+    bmp::Image base;
+    const size_t dimx = 32;
+    const size_t dimy = 32;
+    const size_t rows = 8;
+    const size_t cols = 16;
+
+    std::vector<bmp::Image> images;
+
+    bmp::Image cut_glyph(size_t icol, size_t irow);
+
+public:
+    Glyphs();
+
+    bmp::Image get_char(char c);
+
+    void imprint(bmp::Image& imp_image, char c, V2<size_t> position, double scale);
+
+    void imprint(bmp::Image& imp_image, string str, V2<size_t> position, double scale);
+
+
+};
+
+
+Glyphs::Glyphs(){
+    base = bmp::Image("./bmp_font/bmp_if_font_5.bmp");
+
+    for(size_t irow = 0; irow < rows; irow++){
+        for(size_t icol = 0; icol < cols; icol++){
+            bmp::Image glyph;
+            glyph = cut_glyph(icol, irow);
+
+            images.push_back(glyph);
+        }
+    }
+}
+
+bmp::Image Glyphs::cut_glyph(size_t icol, size_t irow){
+
+    bmp::Image glyph(dimx, dimy);
+
+    for(size_t i = 0; i < dimx; i++){
+        for(size_t j = 0; j < dimy; j++){
+
+            bmp::Color px = base.pixelArray.get(i + dimx * icol, j + dimy * irow);
+
+            glyph.pixelArray.set(i, j, px);
+        }
+    }
+
+    return glyph;
+}
+
+bmp::Image Glyphs::get_char(char c){
+    size_t pos = (int) c;
+    if(pos < 96){pos -= 1;}
+    return images[pos];
+}
+
+void Glyphs::imprint(bmp::Image& imp_image, char c, V2<size_t> position, double scale){
+
+    bmp::Image character = get_char(c);
+    bmp::Image scaled;
+
+    size_t dimx_char = int(double(dimx) * scale);
+    size_t dimy_char = int(double(dimy) * scale);
+
+    if(scale != 1){
+
+
+        // scale
+        scaled = bmp::Image(dimx_char, dimy_char);
+
+        for(size_t i = 0; i < dimx_char; i++){
+            for(size_t j = 0; j < dimy_char; j++){
+                size_t src_x = double(i) / double(dimx_char) * dimx;
+                size_t src_y = double(j) / double(dimy_char) * dimy;
+
+                src_x = min( (size_t) dimx - 1, src_x);
+                src_y = min( (size_t) dimy - 1, src_y);
+
+                bmp::Color px = character.pixelArray.get(src_x, src_y);
+                scaled.pixelArray.set(i, j, px);
+            }
+        }
+    }
+    else{
+        scaled = character;
+    }
 
 
 
+    for(size_t i = 0; i < dimx_char; i++){
+        for(size_t j = 0; j < dimy_char; j++){
+            bmp::Color px = scaled.pixelArray.get(i, j);
+            size_t xpos = i + position.x();
+            size_t ypos = j + position.y();
+
+            bool check_border_x = (xpos < (size_t) imp_image.width() );
+            bool check_border_y = (ypos < (size_t) imp_image.height());
+
+            if(check_border_x && check_border_y ){
+                imp_image.pixelArray.set(xpos, ypos, px);
+            }
+        }
+    }
+}
+
+void Glyphs::imprint(bmp::Image& imp_image, string str, V2<size_t> position, double scale){
+
+    size_t dimx_char = int(double(dimx) * scale);
+
+    //size_t dimy_char = int(double(dimy) * scale);
+
+    for(size_t i = 0; i < str.size(); i++){
+        V2<size_t> char_pos = position;
+        char_pos.x() = position.x() + i * dimx_char;
+        imprint(imp_image, str[i], char_pos, scale);
+    }
+}
+
+void draw_animation(){
+    vector<Sphere<4>> spheres;
+
+
+
+    for(int i = -10; i < 10; i ++){
+        cout << "rendering frame: " << i + 10 << endl;
+        // background sphere
+        spheres.push_back(Sphere<4>(V4d(0, -10004, -20, 0),  10000, Color(0, 1, 1), Color(0), 0, 0));
+        // light
+        spheres.push_back(Sphere<4>(V4d(0,     20, 10, 0 ),     3, Color(0),       Color(3), 0, 0));
+
+        spheres.push_back(Sphere<4>(V4d(i / 2.0,      0, -30, 0),      4, Color(1, 0, 0), Color(0), 0, 0));
+        spheres.push_back(Sphere<4>(V4d(5,     -1, -15, 0),      2, Color(0, 0, 1), Color(0), 0, 0));
+
+        // actual thing
+        spheres.push_back(Sphere<4>(V4d(0, 0, -20,     i / 5.),      2, Color(1, 1, 0), Color(0), 0, 0));
+
+        bmp::Image img = render<4>(spheres);
+
+        Glyphs gly;
+        stringstream ss;
+        ss << "Sphere position: " << V4d(0, 0, -20,     i / 5.);
+        cout << ss.str() << endl;
+
+        gly.imprint(img, ss.str(), V2<size_t>(320, 0), 0.33);
+        img.write( "./test_ani/ani" + numtostr(i + 10) + ".bmp" );
+
+        spheres.clear();
+    }
+}
 
 
 int main()
 {
     cout << "START RENDER" << endl;
     // renderer
-
-    draw_axis();
-
-
+    draw_animation();
 
     cout << "Hello world!" << endl;
 

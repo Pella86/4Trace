@@ -230,3 +230,11 @@ void Image::write(string filename){
         throw ios_base::failure("Opening file to write went wrong");
     }
 }
+
+int Image::width() const{
+    return info_header.biWidth;
+}
+
+int Image::height() const {
+    return info_header.biHeight;
+}

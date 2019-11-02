@@ -16,6 +16,10 @@ using Color = V3d;
 
 constexpr double MAX_RAY_DEPTH = 5;
 
+double mix(double a, double b, double mix){
+    return b * mix + a * (1 - mix);
+}
+
 /*******************************************************************************
 Sphere class
 *******************************************************************************/
@@ -107,6 +111,20 @@ Color trace(const Vector<double, dim>& rayorig, const Vector<double, dim>& raydi
         }
 
         if((sphere->transparency > 0 || sphere->reflection > 0) && depth < MAX_RAY_DEPTH){
+            double facingratio = -raydir.dot(nhit);
+            double fresneleffect = mix(pow(1 - facingratio, 3), 1, 0.1);
+
+            Vector<double, dim> refldir = raydir - nhit * 2 * raydir.dot(nhit);
+            refldir.normalize();
+            Color reflection = trace(phit + nhit * bias, refldir, spheres, depth + 1);
+            Color refraction(0);
+            if(sphere->transparency > 0){
+                // do nothing for now
+            }
+
+            surfaceColor = (reflection * fresneleffect +
+                            refraction * (1 - fresneleffect) * sphere->transparency) *
+                            sphere->surface;
 
         }
         else{
@@ -244,6 +262,8 @@ void draw_axis(){
     img.write("test_render_draw_axis.bmp");
 
 }
+
+
 
 class Glyphs{
 private:
@@ -401,11 +421,42 @@ void draw_animation(){
 }
 
 
+void test_reflection(){
+    std::vector<Sphere<3>> spheres;
+    // position, radius, surface color, reflectivity, transparency, emission color
+    spheres.push_back(Sphere<3>(V3d( 0.0, -10004, -20), 10000, Color(0.20, 0.20, 0.20), Color(0), 0, 0.0));
+    spheres.push_back(Sphere<3>(V3d( 0.0,      0, -20),     4, Color(1.00, 0.32, 0.36), Color(0), 0, 0.5));
+    spheres.push_back(Sphere<3>(V3d( 5.0,     -1, -15),     2, Color(0.90, 0.76, 0.46), Color(0), 0, 0.0));
+    spheres.push_back(Sphere<3>(V3d( 5.0,      0, -25),     3, Color(0.65, 0.77, 0.97), Color(0), 0, 0.2));
+    spheres.push_back(Sphere<3>(V3d(-5.5,      0, -15),     3, Color(0.90, 0.90, 0.90), Color(0), 0, 0.0));
+    // light
+    spheres.push_back(Sphere<3>(V3d( 0.0,     20, -20),     3, Color(0), Color(3), 0, 0));
+    bmp::Image ren = render<3>(spheres);
+    ren.write("test_render_refraction.bmp");
+}
+
+void test_reflection_4(){
+    std::vector<Sphere<4>> spheres;
+    // position, radius, surface color, reflectivity, transparency, emission color
+    spheres.push_back(Sphere<4>(V4d( 0.0, -10004, -20, 0), 10000, Color(0.20, 0.20, 0.20), Color(0), 0, 0.0));
+    spheres.push_back(Sphere<4>(V4d( 0.0,      0, -20, 0),     5, Color(1.00, 0.32, 0.36), Color(0), 0, 0.5));
+    spheres.push_back(Sphere<4>(V4d( 5.0,     -1, -15, 0),     2, Color(0.90, 0.76, 0.46), Color(0), 0, 0.0));
+    spheres.push_back(Sphere<4>(V4d( 5.0,      0, -25, 0),     3, Color(0.65, 0.77, 0.97), Color(0), 0, 0.2));
+    spheres.push_back(Sphere<4>(V4d(-5.5,      0, -15, 0),     3, Color(0.90, 0.90, 0.90), Color(0), 0, 0.0));
+    // light
+    spheres.push_back(Sphere<4>(V4d( 0.0,     20, -20, 0),     3, Color(0), Color(3), 0, 0));
+
+    bmp::Image ren = render<4>(spheres);
+    ren.write("test_render_refraction_4.bmp");
+}
+
+
 int main()
 {
     cout << "START RENDER" << endl;
     // renderer
-    draw_animation();
+    test_reflection();
+    test_reflection_4();
 
     cout << "Hello world!" << endl;
 

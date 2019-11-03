@@ -8,6 +8,7 @@
 
 #include "vec.tpp"
 #include "bmp.h"
+#include "Glyphs.h"
 
 
 using namespace std;
@@ -104,22 +105,32 @@ Color trace(const Vector<double, dim>& rayorig, const Vector<double, dim>& raydi
 
         // switch to decide if the sphere is hit from the inside ths will flip
         // the normal
-        //bool inside = false;
+        bool inside = false;
         if(raydir.dot(nhit) > 0){
             nhit = -nhit;
-            //inside = true;
+            inside = true;
         }
 
         if((sphere->transparency > 0 || sphere->reflection > 0) && depth < MAX_RAY_DEPTH){
             double facingratio = -raydir.dot(nhit);
-            double fresneleffect = mix(pow(1 - facingratio, 3), 1, 0.1);
+            double fresneleffect = mix(pow(1 - facingratio, 3), 1, sphere->reflection);
 
             Vector<double, dim> refldir = raydir - nhit * 2 * raydir.dot(nhit);
             refldir.normalize();
+
             Color reflection = trace(phit + nhit * bias, refldir, spheres, depth + 1);
+
             Color refraction(0);
+
             if(sphere->transparency > 0){
-                // do nothing for now
+                double ior = 1.1;
+                double eta = (inside)? ior : 1;
+                double cosi = -nhit.dot(raydir);
+                double k = 1 - eta * eta * (1 - cosi * cosi);
+                Vector<double, dim> refdir = raydir * eta + nhit * (eta * cosi - sqrt(k));
+                refdir.normalize();
+
+                refraction = trace(phit - nhit * bias, refdir, spheres, depth + 1);
             }
 
             surfaceColor = (reflection * fresneleffect +
@@ -264,147 +275,21 @@ void draw_axis(){
 }
 
 
-
-class Glyphs{
-private:
-
-    bmp::Image base;
-    const size_t dimx = 32;
-    const size_t dimy = 32;
-    const size_t rows = 8;
-    const size_t cols = 16;
-
-    std::vector<bmp::Image> images;
-
-    bmp::Image cut_glyph(size_t icol, size_t irow);
-
-public:
-    Glyphs();
-
-    bmp::Image get_char(char c);
-
-    void imprint(bmp::Image& imp_image, char c, V2<size_t> position, double scale);
-
-    void imprint(bmp::Image& imp_image, string str, V2<size_t> position, double scale);
-
-
-};
-
-
-Glyphs::Glyphs(){
-    base = bmp::Image("./bmp_font/bmp_if_font_5.bmp");
-
-    for(size_t irow = 0; irow < rows; irow++){
-        for(size_t icol = 0; icol < cols; icol++){
-            bmp::Image glyph;
-            glyph = cut_glyph(icol, irow);
-
-            images.push_back(glyph);
-        }
-    }
-}
-
-bmp::Image Glyphs::cut_glyph(size_t icol, size_t irow){
-
-    bmp::Image glyph(dimx, dimy);
-
-    for(size_t i = 0; i < dimx; i++){
-        for(size_t j = 0; j < dimy; j++){
-
-            bmp::Color px = base.pixelArray.get(i + dimx * icol, j + dimy * irow);
-
-            glyph.pixelArray.set(i, j, px);
-        }
-    }
-
-    return glyph;
-}
-
-bmp::Image Glyphs::get_char(char c){
-    size_t pos = (int) c;
-    if(pos < 96){pos -= 1;}
-    return images[pos];
-}
-
-void Glyphs::imprint(bmp::Image& imp_image, char c, V2<size_t> position, double scale){
-
-    bmp::Image character = get_char(c);
-    bmp::Image scaled;
-
-    size_t dimx_char = int(double(dimx) * scale);
-    size_t dimy_char = int(double(dimy) * scale);
-
-    if(scale != 1){
-
-
-        // scale
-        scaled = bmp::Image(dimx_char, dimy_char);
-
-        for(size_t i = 0; i < dimx_char; i++){
-            for(size_t j = 0; j < dimy_char; j++){
-                size_t src_x = double(i) / double(dimx_char) * dimx;
-                size_t src_y = double(j) / double(dimy_char) * dimy;
-
-                src_x = min( (size_t) dimx - 1, src_x);
-                src_y = min( (size_t) dimy - 1, src_y);
-
-                bmp::Color px = character.pixelArray.get(src_x, src_y);
-                scaled.pixelArray.set(i, j, px);
-            }
-        }
-    }
-    else{
-        scaled = character;
-    }
-
-
-
-    for(size_t i = 0; i < dimx_char; i++){
-        for(size_t j = 0; j < dimy_char; j++){
-            bmp::Color px = scaled.pixelArray.get(i, j);
-            size_t xpos = i + position.x();
-            size_t ypos = j + position.y();
-
-            bool check_border_x = (xpos < (size_t) imp_image.width() );
-            bool check_border_y = (ypos < (size_t) imp_image.height());
-
-            if(check_border_x && check_border_y ){
-                imp_image.pixelArray.set(xpos, ypos, px);
-            }
-        }
-    }
-}
-
-void Glyphs::imprint(bmp::Image& imp_image, string str, V2<size_t> position, double scale){
-
-    size_t dimx_char = int(double(dimx) * scale);
-
-    //size_t dimy_char = int(double(dimy) * scale);
-
-    for(size_t i = 0; i < str.size(); i++){
-        V2<size_t> char_pos = position;
-        char_pos.x() = position.x() + i * dimx_char;
-        imprint(imp_image, str[i], char_pos, scale);
-    }
-}
-
 void draw_animation(){
     vector<Sphere<4>> spheres;
-
-
 
     for(int i = -10; i < 10; i ++){
         cout << "rendering frame: " << i + 10 << endl;
         // background sphere
-        spheres.push_back(Sphere<4>(V4d(0, -10004, -20, 0),  10000, Color(0, 1, 1), Color(0), 0, 0));
+        spheres.push_back(Sphere<4>(V4d(0,  -10004, -20, 0), 10000, Color(0, 1, 1), Color(0), 0, 0));
         // light
-        spheres.push_back(Sphere<4>(V4d(0,     20, 10, 0 ),     3, Color(0),       Color(3), 0, 0));
+        spheres.push_back(Sphere<4>(V4d(0,      20, -20, 0 ),     3, Color(0),       Color(3), 0, 0));
 
-        spheres.push_back(Sphere<4>(V4d(i / 2.0,      0, -30, 0),      4, Color(1, 0, 0), Color(0), 0, 0));
-        spheres.push_back(Sphere<4>(V4d(5,     -1, -15, 0),      2, Color(0, 0, 1), Color(0), 0, 0));
+        spheres.push_back(Sphere<4>(V4d(i / 2.0, 0, -30, 0),     4, Color(1, 0, 0), Color(0), 0, 0));
+        spheres.push_back(Sphere<4>(V4d(5,      -1, -15, 0),     2, Color(0, 0, 1), Color(0), 0, 0));
 
         // actual thing
-        spheres.push_back(Sphere<4>(V4d(0, 0, -20,     i / 5.),      2, Color(1, 1, 0), Color(0), 0, 0));
+        spheres.push_back(Sphere<4>(V4d(0, 0, -20,  i / 5.),     2.5, Color(1, 1, 1), Color(0), 1.5, .1));
 
         bmp::Image img = render<4>(spheres);
 
@@ -432,7 +317,7 @@ void test_reflection(){
     // light
     spheres.push_back(Sphere<3>(V3d( 0.0,     20, -20),     3, Color(0), Color(3), 0, 0));
     bmp::Image ren = render<3>(spheres);
-    ren.write("test_render_refraction.bmp");
+    ren.write("test_render_reflection.bmp");
 }
 
 void test_reflection_4(){
@@ -447,16 +332,105 @@ void test_reflection_4(){
     spheres.push_back(Sphere<4>(V4d( 0.0,     20, -20, 0),     3, Color(0), Color(3), 0, 0));
 
     bmp::Image ren = render<4>(spheres);
-    ren.write("test_render_refraction_4.bmp");
+    ren.write("test_render_reflection_4.bmp");
 }
 
+void render_cube_vertex(){
+
+    std::vector<Sphere<4>> spheres;
+
+    // background sphere
+    spheres.push_back(Sphere<4>(V4d(0,  -10004, -20, 0), 10000, Color(0, 1, 1), Color(0), 0, 0));
+    // light
+    spheres.push_back(Sphere<4>(V4d(0,      20, -15, 0 ),     3, Color(0),       Color(3), 0, 0));
+
+//    spheres.push_back(Sphere<4>(V4d(2,  0,  -20, 0),  .5, Color(1, 0, 0), Color(0), 0, 0));
+//    spheres.push_back(Sphere<4>(V4d(-2, 0,  -20, 0),  .5, Color(1, 0, 0), Color(0), 0, 0));
+//    spheres.push_back(Sphere<4>(V4d(0,  2,  -20, 0),  .5, Color(0, 1, 0), Color(0), 0, 0));
+//    spheres.push_back(Sphere<4>(V4d(0,  -2, -20, 0),  .5, Color(0, 1, 0), Color(0), 0, 0));
+//    spheres.push_back(Sphere<4>(V4d(0,  0,  -22, 0),  .5, Color(0, 0, 1), Color(0), 0, 0));
+//    spheres.push_back(Sphere<4>(V4d(0,  0,  -18, 0),  .5, Color(0, 0, 1), Color(0), 0, 0));
+//    spheres.push_back(Sphere<4>(V4d(0,  0,  -20, 2),  .5, Color(1, 0, 1), Color(0), 0, 0));
+//    spheres.push_back(Sphere<4>(V4d(0,  0,  -20, -2), .5, Color(1, 0, 1), Color(0), 0, 0));
+
+    V4d v0(-2, -2,  -18, -2);
+    V4d v1( 2,  2,  -22,  2);
+
+    V4d v2 (v1[0],v0[1],v0[2],v0[3]);
+    V4d v3 (v1[0],v1[1],v0[2],v0[3]);
+    V4d v4 (v0[0],v1[1],v0[2],v0[3]);
+    V4d v5 (v0[0],v0[1],v1[2],v0[3]);
+    V4d v6 (v1[0],v0[1],v1[2],v0[3]);
+    V4d v7 (v1[0],v1[1],v1[2],v0[3]);
+    V4d v8 (v0[0],v1[1],v1[2],v0[3]);
+
+    V4d v9 (v0[0],v0[1],v0[2],v1[3]);
+    V4d v10(v1[0],v0[1],v0[2],v1[3]);
+    V4d v11(v1[0],v1[1],v0[2],v1[3]);
+    V4d v12(v0[0],v1[1],v0[2],v1[3]);
+    V4d v13(v0[0],v0[1],v1[2],v1[3]);
+    V4d v14(v1[0],v0[1],v1[2],v1[3]);
+    V4d v15(v0[0],v1[1],v1[2],v1[3]);
+
+    double sz = 2.2;
+    spheres.push_back(Sphere<4>(v0, sz, Color(1, 0, 1), Color(0), 0, 0));
+    spheres.push_back(Sphere<4>(v1, sz, Color(1, 0, 1), Color(0), 0, 0));
+    spheres.push_back(Sphere<4>(v2, sz, Color(1, 0, 1), Color(0), 0, 0));
+    spheres.push_back(Sphere<4>(v3, sz, Color(1, 0, 1), Color(0), 0, 0));
+    spheres.push_back(Sphere<4>(v4, sz, Color(1, 0, 1), Color(0), 0, 0));
+    spheres.push_back(Sphere<4>(v5, sz, Color(1, 0, 1), Color(0), 0, 0));
+    spheres.push_back(Sphere<4>(v6, sz, Color(1, 0, 1), Color(0), 0, 0));
+    spheres.push_back(Sphere<4>(v7, sz, Color(1, 0, 1), Color(0), 0, 0));
+    spheres.push_back(Sphere<4>(v8, sz, Color(1, 0, 1), Color(0), 0, 0));
+    spheres.push_back(Sphere<4>(v9, sz, Color(1, 0, 1), Color(0), 0, 0));
+    spheres.push_back(Sphere<4>(v10, sz, Color(1, 0, 1), Color(0), 0, 0));
+    spheres.push_back(Sphere<4>(v11, sz, Color(1, 0, 1), Color(0), 0, 0));
+    spheres.push_back(Sphere<4>(v12, sz, Color(1, 0, 1), Color(0), 0, 0));
+    spheres.push_back(Sphere<4>(v13, sz, Color(1, 0, 1), Color(0), 0, 0));
+    spheres.push_back(Sphere<4>(v14, sz, Color(1, 0, 1), Color(0), 0, 0));
+    spheres.push_back(Sphere<4>(v15, sz, Color(1, 0, 1), Color(0), 0, 0));
+
+    bmp::Image ren = render<4>(spheres);
+    ren.write("test_render_hypercube.bmp");
+
+}
+
+
+void test_refraction(){
+    std::vector<Sphere<3>> spheres;
+    // position, radius, surface color, reflectivity, transparency, emission color
+    spheres.push_back(Sphere<3>(V3d( 0.0, -10004, -20), 10000, Color(0.20, 0.20, 0.20), Color(0), 0, 0.0));
+    spheres.push_back(Sphere<3>(V3d( 0.0,      0, -20),     4, Color(1.00, 0.32, 0.36), Color(0), 0, 0.5));
+    spheres.push_back(Sphere<3>(V3d( 5.0,     -1, -15),     2, Color(0.90, 0.76, 0.46), Color(0), 0, 0.0));
+    spheres.push_back(Sphere<3>(V3d( 5.0,      0, -25),     3, Color(0.65, 0.77, 0.97), Color(0), 0, 0.2));
+    spheres.push_back(Sphere<3>(V3d(-5.5,      0, -15),     3, Color(0.90, 0.90, 0.90), Color(0), 1, 0.0));
+    // light
+    spheres.push_back(Sphere<3>(V3d( 0.0,     20, -20),     3, Color(0), Color(3), 0, 0));
+    bmp::Image ren = render<3>(spheres);
+    ren.write("test_render_refraction.bmp");
+}
+
+void test_refraction_4(){
+    std::vector<Sphere<4>> spheres;
+    // position, radius, surface color, reflectivity, transparency, emission color
+    spheres.push_back(Sphere<4>(V4d( 0.0, -10004, -20, 0), 10000, Color(0.20, 0.20, 0.20), Color(0), 0, 0.0));
+    spheres.push_back(Sphere<4>(V4d( 0.0,      0, -20, 0),     4, Color(1.00, 0.32, 0.36), Color(0), 1.5, 0));
+    spheres.push_back(Sphere<4>(V4d( 5.0,     -1, -15, 0),     2, Color(0.90, 0.76, 0.46), Color(0), 0, 0.0));
+    spheres.push_back(Sphere<4>(V4d( 5.0,      0, -25, 0),     3, Color(0.65, 0.77, 0.97), Color(0), 0, 0.2));
+    spheres.push_back(Sphere<4>(V4d(-5.5,      0, -15, 0),     3, Color(0.90, 0.90, 0.90), Color(0), 0, 0.0));
+    // light
+    spheres.push_back(Sphere<4>(V4d( 0.0,     20, -20, 0),     3, Color(0), Color(3), 0, 0));
+    bmp::Image ren = render<4>(spheres);
+
+    ren.write("test_render_refraction_4.bmp");
+}
 
 int main()
 {
     cout << "START RENDER" << endl;
     // renderer
-    test_reflection();
-    test_reflection_4();
+    draw_animation();
+
 
     cout << "Hello world!" << endl;
 
